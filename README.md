@@ -40,7 +40,11 @@ you have the trained model file from the libtorch(detectron2)
 
 ## Model and 3rdparty
 
-YAML_CPP/opencv4.3.0/libtorch-1.8.1
+data：https://share.weiyun.com/io1NaIqT or https://drive.google.com/drive/folders/1bB0YqxwIA_oXjest2R4LMFmROzT2LIpF?usp=sharing
+
+model : https://share.weiyun.com/qF9G5vaA or  https://drive.google.com/drive/folders/1DDi-F4PQKN8EhnpQX_MNF5A_TQIsXaTC?usp=sharing
+
+3rdparty：YAML_CPP/opencv4.3.0/libtorch-1.8.1
 
 ## Train API
 
