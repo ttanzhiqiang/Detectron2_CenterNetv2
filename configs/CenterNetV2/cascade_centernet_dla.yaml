@@ -1,0 +1,25 @@
+_BASE_: "../Centernet-RCNN-FPN.yaml"
+MODEL:
+  WEIGHTS: "F:\\data\\faster_rcnn\\weight\\epoch_3000.pt"
+  MASK_ON: False
+  RESNETS:
+    DEPTH: 101
+  ROI_HEADS:
+    NUM_CLASSES: 1
+    NAME: CascadeROIHeads
+  ROI_BOX_HEAD:
+    CLS_AGNOSTIC_BBOX_REG: True
+  RPN:
+    POST_NMS_TOPK_TRAIN: 2000
+DATASETS:
+  #TRAIN: ("F:\\data\\detectron2_mask_rcnn\\annotations\\4.json","F:\\data\\detectron2_mask_rcnn\\images\\",)
+  TRAIN: ("F:\\data\\faster_rcnn\\annotations\\train.json","F:\\data\\faster_rcnn\\images\\train\\",)
+  TEST: ("coco_2017_val",)
+SOLVER:
+  STEPS: (60000, 80000)
+  MAX_ITER: 90000
+  #STEPS: (15000,20000,30000,)
+  #MAX_ITER: 40000
+  WARMUP_ITERS: 4000
+  WARMUP_FACTOR: 0.00025
+VERSION: 2
