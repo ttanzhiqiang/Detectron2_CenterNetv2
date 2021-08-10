@@ -36,7 +36,7 @@ you have the trained model file from the libtorch(detectron2)
 - cascade
 - evaluate(map)
 
-![](./output/ap.PNG)
+![](./output/map.PNG)
 
 
 

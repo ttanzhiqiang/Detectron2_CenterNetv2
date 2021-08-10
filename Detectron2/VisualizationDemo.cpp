@@ -38,24 +38,29 @@ void VisualizationDemo::start_val(const Options& options) {
 	BuiltinDataset::register_all();
 	VisualizationDemo demo(cfg);
 
-	string train_path = "F:\\data\\faster_rcnn\\images\\train\\";
-	string train_json = "F:\\data\\faster_rcnn\\annotations\\train.json";
+	auto train_json = CfgNode::parseTuple<string>(cfg["DATASETS.TRAIN"], { "" })[0];
+	auto train_path = CfgNode::parseTuple<string>(cfg["DATASETS.TRAIN"], { "" })[1];
+	auto num_classes = cfg["MODEL.CENTERNET.NUM_CLASSES"].as<int>();
+	auto pr_scale = cfg["MODEL.ROI_HEADS.SCORE_THRESH_TEST"].as<float>();
+	auto overlap_threshold = cfg["MODEL.ROI_HEADS.NMS_THRESH_TEST"].as<float>();
 	std::shared_ptr<CocoOriginalDataset> _dataset = std::make_shared<CocoOriginalDataset>(train_path, train_json);
 	auto loader_opts = torch::data::DataLoaderOptions().batch_size(1).workers(1);
 	auto dataloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
 		(std::move(*_dataset), loader_opts);
 
-	int tp = 0;
-	int fp = 0;
-	int fn = 0;
-	std::vector<float> precisions;
-	std::vector<float> recalls;
-	for (auto& img_datas : *dataloader) {
+	std::vector<int> tp(num_classes);
+	std::vector<int> fp(num_classes);
+	std::vector<int> fn(num_classes);
+	std::vector<std::vector<float>> precisions;
+	std::vector<std::vector<float>> recalls;
+	precisions.resize(num_classes);
+	recalls.resize(num_classes);
+ 	for (auto& img_datas : *dataloader) {
 		// check if lr needs to be warmed up at the begining
 		std::vector<DatasetMapperOutput> inputs(1);
 		if (img_datas.size() == 1)
 		{
-			std::cout << img_datas[0].file_name << std::endl;
+			//std::cout << img_datas[0].file_name << std::endl;
 			string path = img_datas[0].img_dir + img_datas[0].file_name;
 			auto img = read_image(path, "BGR");
 			int img_data_i = 0;
@@ -63,8 +68,8 @@ void VisualizationDemo::start_val(const Options& options) {
 			auto gt_boxes = img_datas[0].gt_bboxes;
 			auto gt_labels = img_datas[0].gt_labels;
 			auto device = gt_boxes.device();
-			std::cout << "gt_boxes: " << gt_boxes << std::endl;
-			std::cout << "gt_labels: " << gt_labels << std::endl;
+			//std::cout << "gt_boxes: " << gt_boxes << std::endl;
+			//std::cout << "gt_labels: " << gt_labels << std::endl;
 
 			InstancesPtr predictions; VisImage visualized_output;
 			tie(predictions, visualized_output) = demo.run_on_image(img);
@@ -72,34 +77,35 @@ void VisualizationDemo::start_val(const Options& options) {
 			auto pred_boxes = instances->getTensor("pred_boxes");
 			auto scores = instances->getTensor("scores");
 			auto pred_classes = instances->getTensor("pred_classes");
-			std::cout << "pred_boxes: " << pred_boxes << std::endl;
-			std::cout << "pred_classes: " << pred_classes << std::endl;
-			std::cout << "scores: " << scores << std::endl;
+			//std::cout << "pred_boxes: " << pred_boxes << std::endl;
+			//std::cout << "pred_classes: " << pred_classes << std::endl;
+			//std::cout << "scores: " << scores << std::endl;
 
-			int num_classes = 1;
-			float pr_scale = 0.5;
-			float overlap_threshold = 0.25;
 			auto ap = Accumulators(num_classes, pr_scale, overlap_threshold);
 			auto accumulator = ap.evaluate(pred_boxes.to(device), pred_classes.to(device), scores.to(device), gt_boxes, gt_labels);
 
-			tp += accumulator[0].TP();
-			fp += accumulator[0].FP();
-			fn += accumulator[0].FN();
-			auto pr = Precision(tp, fp, fn);
-			auto recall = Recall(tp, fp, fn);
-			precisions.push_back(pr);
-			recalls.push_back(recall);
-
-			//std::cout << "tp: " << tp << " fp: " << fp << " fn: " << fn << std::endl;
-			std::cout << "pr: " << pr << " recall: " << recall << std::endl;
+			for (int i = 0; i < num_classes; i++) {
+				tp[i] += accumulator[i].TP();
+				fp[i] += accumulator[i].FP();
+				fn[i] += accumulator[i].FN();
+				auto pr = Precision(tp[i], fp[i], fn[i]);
+				auto recall = Recall(tp[i], fp[i], fn[i]);
+				precisions[i].push_back(pr);
+				recalls[i].push_back(recall);
+			}
 		}
 	}
-	std::cout << "tp: " << tp << " fp: " << fp << " fn: " << fn << std::endl;
-	auto precision = Precision(tp, fp, fn);
-	auto recall = Recall(tp, fp, fn);
-	std::cout << "precision: " << precision << " recall: " << recall << std::endl;
-	auto ap = compute_ap(precisions, recalls);
-	std::cout<<"ap:"<<ap<<std::endl;
+	float mean_avg_precision = 0;
+	for (int i = 0; i < num_classes; i++) {
+		std::cout << "tp: " << tp << " fp: " << fp << " fn: " << fn << std::endl;
+		auto precision = Precision(tp[i], fp[i], fn[i]);
+		auto recall = Recall(tp[i], fp[i], fn[i]);
+		std::cout << "precision: " << precision << " recall: " << recall << std::endl;
+		auto ap = compute_ap(precisions[i], recalls[i]);
+		std::cout << "classes: " << i << " ap:" << ap << std::endl;
+		mean_avg_precision += ap;
+	}
+	std::cout << "mean_avg_precision: " << mean_avg_precision << std::endl;
 
 
 	//if (!options.input.empty()) {

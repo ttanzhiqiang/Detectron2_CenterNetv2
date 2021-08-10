@@ -6,6 +6,8 @@ MODEL:
     DEPTH: 101
   ROI_HEADS:
     NUM_CLASSES: 1
+    SCORE_THRESH_TEST: 0.25
+    NMS_THRESH_TEST: 0.45
 DATASETS:
   #TRAIN: ("F:\\data\\detectron2_mask_rcnn\\annotations\\4.json","F:\\data\\detectron2_mask_rcnn\\images\\",)
   TRAIN: ("F:\\data\\faster_rcnn\\annotations\\train.json","F:\\data\\faster_rcnn\\images\\train\\",)
