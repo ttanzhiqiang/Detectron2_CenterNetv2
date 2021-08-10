@@ -29,6 +29,8 @@ namespace Detectron2
 
 		static CfgNode setup_cfg(const std::string &config_file, const CfgNode::OptionList &opts,
 			float confidence_threshold);
+			
+		static void start_val(const Options& options);
 	public:
 		/**
 			cfg (CfgNode):

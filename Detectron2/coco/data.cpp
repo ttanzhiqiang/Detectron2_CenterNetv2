@@ -170,6 +170,56 @@ namespace Detectron2
     return _coco_ann;
   }
 
+//
+// CocoOriginalDataset
+//
+
+  CocoOriginalDataset::CocoOriginalDataset(const std::string& img_dir,
+      const std::string& ann_path)
+      : _ann_path(ann_path), _img_dir(img_dir)
+  {
+      fetch_ann_data();
+  }
+
+  void CocoOriginalDataset::fetch_ann_data() {
+      if (_ann_path.size() != 0) {
+          std::ifstream ifs(_ann_path);
+          ifs >> _json_ann;
+          _coco_ann.load_data(_json_ann);
+      }
+  }
+  torch::optional<size_t> CocoOriginalDataset::size() const {
+      return _coco_ann.iids.size();
+  }
+
+  // fetch all data of idx-th image
+  ImgData CocoOriginalDataset::get(size_t idx) {
+      ImgData idata;
+      idata.img_dir = _img_dir;
+      auto iid = _coco_ann.iids[idx];
+      idata.img_id = iid;
+      auto fname = _coco_ann.iid2iname[iid];
+      idata.file_name = fname;
+      auto img_path = _img_dir + "/" + fname;
+      auto img_cv2 = cv::imread(img_path, cv::IMREAD_COLOR);
+      if (img_cv2.empty()) {
+          throw std::runtime_error("can not read image: " + img_path);
+      }
+      idata.img_cv2 = img_cv2;
+      idata.ori_shape = std::vector<int64_t>{ img_cv2.rows, img_cv2.cols, 3 };
+
+      idata.gt_bboxes = std::get<0>(_coco_ann.grouped_anns[iid]);
+      idata.gt_labels = std::get<1>(_coco_ann.grouped_anns[iid]);
+      idata.gt_labels = std::get<1>(_coco_ann.grouped_anns[iid]);
+      //idata.gt_seg = std::get<2>(_coco_ann.grouped_anns[iid]);
+      // apply tansform
+      return idata;
+  }
+
+  CocoAnn CocoOriginalDataset::coco_ann() {
+      return _coco_ann;
+  }
+
 
   cv::Mat rescale_image(cv::Mat img, float scale_w, float scale_h){
     cv::Mat out;
@@ -348,7 +398,6 @@ namespace Detectron2
     img_data.gt_bboxes.reset();
     img_data.gt_bboxes = l_gt_bboxes;
     img_data.gt_bboxes = img_data.gt_bboxes * 1.0;
-
     ////seg
     //for (int i_gt_seg = 0; i_gt_seg < img_data.gt_seg.size(); i_gt_seg++)
     //{

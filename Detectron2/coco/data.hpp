@@ -91,6 +91,23 @@ namespace Detectron2
     std::string _random_flip;    
   };
 
+  class	CocoOriginalDataset : public torch::data::datasets::Dataset<CocoDataset, ImgData>
+  {
+  public:
+      CocoOriginalDataset() {};
+      CocoOriginalDataset(const std::string& img_dir, const std::string& ann_path);
+      ImgData get(size_t index) override;
+      torch::optional<size_t> size() const override;
+      CocoAnn coco_ann();
+  private:
+      void fetch_ann_data();
+      CocoAnn _coco_ann;
+      std::string _ann_path;
+      std::string _img_dir;
+      json _json_ann;
+      //json _trans_cfgs;
+  };
+
   // the following defines some common image transforms like rescale and flip etc.
   cv::Mat rescale_image(cv::Mat img, float scale_w, float scale_h);
   std::tuple<cv::Mat, float, float> rescale_image(cv::Mat img, float img_scale);

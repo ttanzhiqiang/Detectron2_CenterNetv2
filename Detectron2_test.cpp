@@ -33,7 +33,7 @@ void demo() {
 	//options.output = "predict";
 	//options.opts = { {"MODEL.WEIGHTS", YAML::Node("detectron2://" + model) } };
 	//try {
-		VisualizationDemo::start(options);
+		VisualizationDemo::start_val(options);
 	//}
 	//catch (const std::exception& e) {
 	//	const char* msg = e.what();
