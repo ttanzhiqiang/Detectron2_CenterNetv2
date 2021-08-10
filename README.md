@@ -34,6 +34,9 @@ you have the trained model file from the libtorch(detectron2)
 
 - dla
 - cascade
+- evaluate(map)
+
+![](./output/ap.PNG)
 
 
 
